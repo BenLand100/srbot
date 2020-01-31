@@ -74,12 +74,14 @@ def open_bank():
     if len(bank_points) < 15:
         return False
     click_mouse(*(bank_points[0]+[mmxs,mmys-8]))
+    sleep(1.0)
     flag_wait()
+    sleep(1.0)
     mainscreen = get_mainscreen()
     pa = find_colors([74,70,70],mainscreen,tol=0.02,mode='hsl')
     pb = find_colors([118,96,68],mainscreen,tol=0.02,mode='hsl')
     points = filter_near(pa,pb,20)
-    np.random.shuffle(points)
+    points = closest_shuffle([msxc,msyc],points,15)
     if len(points) > 1:
         minidx = np.argmin(np.sum(np.square(points-[msxc-msxs,msyc-msys]),axis=1))
         points[-1],points[minidx] = points[minidx],points[-1]
