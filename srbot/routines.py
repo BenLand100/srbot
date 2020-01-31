@@ -75,7 +75,6 @@ def open_bank():
         return False
     click_mouse(*(bank_points[0]+[mmxs,mmys-8]))
     flag_wait()
-    flag_wait()
     mainscreen = get_mainscreen()
     pa = find_colors([74,70,70],mainscreen,tol=0.02,mode='hsl')
     pb = find_colors([118,96,68],mainscreen,tol=0.02,mode='hsl')
