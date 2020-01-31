@@ -81,11 +81,8 @@ def open_bank():
     pa = find_colors([74,70,70],mainscreen,tol=0.02,mode='hsl')
     pb = find_colors([118,96,68],mainscreen,tol=0.02,mode='hsl')
     points = filter_near(pa,pb,20)
-    points = closest_shuffle([msxc,msyc],points,15)
-    if len(points) > 1:
-        minidx = np.argmin(np.sum(np.square(points-[msxc-msxs,msyc-msys]),axis=1))
-        points[-1],points[minidx] = points[minidx],points[-1]
-    for point in points[-5:]:
+    points = closest_shuffle([msxc-msxs,msyc-msys],points,15)
+    for point in points[:min(5,len(points))]:
         click_mouse(*point,left=False)
         sleep(0.05)
         use = find_bitmap(use_booth,get_mainscreen())
