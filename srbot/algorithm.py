@@ -25,18 +25,23 @@ def closest(point,points):
     sorter = np.sum(np.square(points-point),axis=-1)
     return points[np.argmin(sorter)]
 
-def closest_exp(pt,pts,scale,N=1):
+def closest_exp(pt,pts,scale,N=None):
     '''Samples the pts array based on exp(dist/scale) where dist is distance of pts to pt.
        returns N samples from pts (can repeat).'''
     pts = np.asarray(pts)
     pt = np.asarray(pt)
     dists = np.sqrt(np.sum(np.square(pts - pt),axis=1))
-    p = np.exp(-dists/50)
+    p = np.exp(-dists/scale)
     p = p/np.sum(p)
-    return np.searchsorted(np.cumsum(p),np.random.random(N))
+    if N is None:
+        return pts[np.searchsorted(np.cumsum(p),np.random.random())]
+    else:
+        return pts[np.searchsorted(np.cumsum(p),np.random.random(N))]
 
 def closest_shuffle(pt,pts,sigma):
     '''Sorts pts by distance to pt where distance is perturbed by a gaussian width sigma.'''
+    if len(pts) == 0:
+        return pts
     pts = np.asarray(pts)
     pt = np.asarray(pt)
     dists = np.sqrt(np.sum(np.square(pts - pt),axis=1)) + np.random.normal(0,sigma,len(pts))
