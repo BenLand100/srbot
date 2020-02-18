@@ -9,11 +9,13 @@ from .algorithm import *
 
 loginscreen = load_image('loginscreen.png')
 existinguser = load_image('existinguser.png')
+no_user_pass = load_image('no_user_pass.png')
 use_booth = load_image('use_booth.png')
 bank_window = load_image('bank_window.png')
 store_all = load_image('store_all.png')
 climb = load_image('climb.png')
 run_already_on = load_image('run_on.png')
+drop_txt = load_image('drop.png')
 
 def login_screen(client=None):
     if client is None:
@@ -30,12 +32,14 @@ def login(client=None):
     if client is None:
         client = get_client()
     print('logging in')
-    if len(find_bitmap(existinguser,client)) > 0:
+    if len(find_best_bitmap(existinguser,client,tol=0.25,mode='xcorr')) > 0:
         click_mouse(463,291)
         sleep(2.0)
     click_mouse(355,240)
     sleep(2.0)
-    send_keys('%s\n%s'%(creds.username,creds.password))
+    client = get_client()
+    if len(find_bitmap(no_user_pass,client)) > 0:
+        send_keys('%s\n%s'%(creds.username,creds.password))
     sleep(1.0)
     click_mouse(305,326)
     sleep(5.0)
@@ -48,6 +52,24 @@ def count_inv(mask=False,color=[1,0,0],tol=0.02):
     w,h = 42,36
     grid = [[len(find_colors(color,inventory[h*i:h*i+h,w*j:w*j+w],tol=tol))>0 for i in range(7)] for j in range(4)]
     return grid if mask else np.count_nonzero(grid)
+
+def drop_all(color=[1,0,0],tol=0.02):
+    while True:
+        inventory = get_inventory()
+        drop = find_colors(color,inventory,tol=tol)
+        if len(drop) > 50:
+            np.random.shuffle(drop)
+            click_mouse(*(drop[0]+[ivxs,ivys]),left=False)
+            sleep(0.2)
+            client = get_client()
+            found = find_bitmap(drop_txt,client,tol=0.02)
+            if len(found) > 0:
+                click_mouse(*(found[0]+[10,5]))
+            else:
+                move_mouse(*(drop[0]+[ivxs,ivys-100]))
+            sleep(0.5)
+        else:
+            break
 
 bank_floor_colors = [[130,60,47],[170,104,80]]
 def open_bank():
