@@ -1,11 +1,12 @@
 # ScapeRune Bot
 
 Jupyter notebooks contain scripts that use the srbot Python library to automate
-tasks in ScapeRune.
+tasks in RuneScape servers circa 2006. Originally written for Scaperune
+and now targeted at 2006Rebotted.
 
 # Setup
 
-Strongly recommended to run ScapeRune in a VNC session and set the DISPLAY
+Strongly recommended to run RuneScape in a VNC session and set the DISPLAY
 varible to the VNC display. This code uses the system mouse and keyboard.
 
 # Usage
