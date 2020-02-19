@@ -17,7 +17,7 @@ msxc,msyc = msxs+msw/2,msys+msh/2
 ivxs,ivxe,ivys,ivye = 560+xoff,737+xoff,207+yoff,460+yoff
 ivw,ivh = (ivxe-ivxs+1),(ivye-ivys+1)
 mmxs,mmxe,mmys,mmye = 548+xoff,726+xoff,3+yoff,165+yoff
-mmxc,mmyc=64+xoff,85+yoff
+mmxc,mmyc=mmxs+101,mmys+82
 
 def target():
     '''looks for the client and caches its location'''
@@ -25,4 +25,4 @@ def target():
     desktop = np.asarray(pyautogui.screenshot())
     pts = find_bitmap(anchor,desktop)
     assert len(pts)==1,'window ambiguious or not found'
-    client_pos[0],client_pos[1] = pts[0]+[0,anchor.shape[1]]
+    client_pos[0],client_pos[1] = pts[0]+[0,anchor.shape[1]] #FIXME

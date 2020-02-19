@@ -1,5 +1,12 @@
 import numpy as np
 
+def concatenate(*lists):
+    nonempty = [elem for elem in lists if len(elem) > 0]
+    if len(nonempty) > 0:
+        return np.concatenate(nonempty)
+    else:
+        return np.asarray([])
+
 def filter_near(a,b,dist):    
     '''returns all points in a within some distance to a point in b'''
     if len(a) == 0 or len(b) == 0:
@@ -18,6 +25,8 @@ def filter_far(a,b,dist):
 
 def filter_radius(pts,center,radius):
     '''returns all points in pts within radius of the center point'''
+    if len(pts) == 0:
+        return np.asarray([])
     return pts[np.sum(np.square(pts-center),axis=-1)<radius*radius]
 
 def closest(point,points):
@@ -28,6 +37,10 @@ def closest(point,points):
 def closest_exp(pt,pts,scale,N=None):
     '''Samples the pts array based on exp(dist/scale) where dist is distance of pts to pt.
        returns N samples from pts (can repeat).'''
+    if len(pts) == 0:
+        return []
+    elif len(pts) == 1:
+        return [pts[0]]
     pts = np.asarray(pts)
     pt = np.asarray(pt)
     dists = np.sqrt(np.sum(np.square(pts - pt),axis=1))

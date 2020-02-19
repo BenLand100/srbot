@@ -9,14 +9,13 @@ flag = load_image('flag.png')
 
 def get_compass_angle():
     compass = get_compass()
-    red = find_colors([238,0,0],compass,tol=0.2)-np.asarray(compass.shape)[[1,0]]/2
-    clusters,counts = cluster(red,radius=5)
-    tips = clusters[counts<5]
-    if np.count_nonzero(counts<5) > 0:
-        meanxy = np.asarray([np.mean(tip.T,axis=1) for tip in clusters[counts<5]])
-        meanxy = np.mean(meanxy.T,axis=1)
+    red = find_colors([63,0,0],compass,tol=(0.01,0.01,0.01),mode='hsl')-np.asarray(compass.shape)[[1,0]]/2
+    clusters,counts = cluster(red,radius=2)
+    N = clusters[counts>10]
+    if len(N) > 0:
+        meanxy = np.mean([np.mean(n,axis=0) for n in N],axis=0)
         direction = [-1,1]*meanxy/np.sqrt(np.sum(np.square(meanxy)))
-        return np.mod(np.arctan2(direction[1],direction[0])/np.pi*180-90,360)
+        return np.mod(np.arctan2(direction[1],direction[0])/np.pi*180+90,360)
     else:
         return 0
 
@@ -50,8 +49,8 @@ def polish_minimap(min_same=28,horizontal=True,bounds=30,click=True):
     bestn = 0
     left = True
     pyautogui.PAUSE = 0.001
+    deg = get_compass_angle()
     while True:
-        deg = get_compass_angle()
         left = np.random.random() < 0.5
         if deg < 360-bounds and deg > 180:
             left = True
@@ -70,7 +69,10 @@ def polish_minimap(min_same=28,horizontal=True,bounds=30,click=True):
         walls = find_colors([238,238,238],minimap,tol=0.05)
         vals,counts = np.unique(walls[:,1 if horizontal else 0],return_counts=True)
         maxn = np.max(counts)
-        print(maxn)
+        deg = get_compass_angle()
+        if maxn > bestn:
+            bestn = maxn
+            print('best: %i @ %0.2f deg'%(bestn,deg))
         if maxn >= min_same and (deg > 360-bounds or deg < bounds):
             break
     pyautogui.PAUSE = 0.1

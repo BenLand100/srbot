@@ -46,11 +46,11 @@ def login(client=None):
     click_mouse(401,335)
     sleep(5.0)
 
-def count_inv(mask=False,color=[1,0,0],tol=0.02):
+def count_inv(mask=False,color=[1,0,0],tol=0.02,mode='dist'):
     '''counts the number of items with the given color (default is shadow, so all) in the inventory'''
     inventory = get_inventory()
     w,h = 42,36
-    grid = [[len(find_colors(color,inventory[h*i:h*i+h,w*j:w*j+w],tol=tol))>0 for i in range(7)] for j in range(4)]
+    grid = [[len(find_colors(color,inventory[h*i+2:h*i+h+2,w*j:w*j+w],tol=tol,mode=mode))>0 for i in range(7)] for j in range(4)]
     return grid if mask else np.count_nonzero(grid)
 
 def drop_all(color=[1,0,0],tol=0.02):
@@ -139,7 +139,7 @@ def deposit_all(ignore_first=False):
             break
         mainscreen = get_mainscreen()
     
-tabs = {'settings':[681,484],'inventory':[645,187],'stats':[584,190]}
+tabs = {'settings':[681,484],'inventory':[645,187],'stats':[584,190],'run':[712,483]}
 def open_tab(tab):
     if tab not in tabs:
         raise RuntimeException('Unknown tab %s'%tab)
@@ -147,9 +147,25 @@ def open_tab(tab):
     sleep(0.5)
 
 def run_on(restore_tab='inventory'):
-    open_tab('settings')
+    open_tab('run')
     inventory = get_inventory()
-    if len(find_bitmap(run_already_on,inventory,tol=0.02)) == 0:
-        click_mouse(646,435)
-        sleep(0.5)
+    click_mouse(627,267)
+    sleep(0.2)
     open_tab(restore_tab)
+    
+def confirm_click(points,order=None,min_cyan=100):
+    if len(points) == 0:
+        return False
+    if order is None:
+        np.random.shuffle(points)
+    else:
+        points = points[order]
+    for i in range(min(10,len(points))):
+        move_mouse(*points[i])
+        sleep(0.05)
+        uptext = get_uptext()
+        cyan = find_colors([0,238,238],uptext,tol=0.2)
+        if len(cyan) > min_cyan:
+            click_mouse(*points[i])
+            return True
+    return False
