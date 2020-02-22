@@ -7,7 +7,7 @@ from srbot import *
 west_road = [122,117,70]
 east_road = [121,119,97]
 wall_color = [190,184,155]
-mine_rock_color = [154,91,39]
+mine_rock_color = [97,58,3]
 mine_area_color = [98,80,23]
 inner_wall_color = [60,60,50]
 outer_wall_color = [73,64,41]
