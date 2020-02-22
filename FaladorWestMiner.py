@@ -31,7 +31,7 @@ def count_rocks(weighted=True,rocks=None):
     raw_counts = np.asarray([(count_inv(color=invc,tol=tol,mode='hsl'),weight) for weight,color,tol,invc in rocks])
     return raw_counts[:,0]/raw_counts[:,1] if weighted else raw_counts[:,0]
 
-def fast_mine(points,noob_factor=1.0):
+def fast_mine(points):
     if len(points) == 0:
         return False
     counts = count_inv(color=[119,96,67],tol=0.02)
@@ -40,13 +40,16 @@ def fast_mine(points,noob_factor=1.0):
     points = closest_exp([msw/2,msh/2],points,10,N=5)
     if points is None or not confirm_click(points):
         return False
-    for i in range(int(100*noob_factor)):
-        sleep(0.05)
-        if np.any(count_inv(color=[119,96,67],tol=0.02) != counts):
-            return True
-    return False
+    return True
 
-def mine(rocks=rocks,noob_factor=2.0):
+def find_rock(rock):
+    weight,color,tol,bmp = rock
+    mainscreen = get_mainscreen()
+    found = find_colors(color,mainscreen,tol=tol,mode='hsl')
+    b = find_colors(np.asarray([107,88,28]),mainscreen,tol=0.02)
+    return filter_near(found,b,10)
+
+def mine(rocks=rocks,noob_factor=0.5):
     '''mines the next rock based on weights in rocks structure
        finds rock based on color of ore plus proximity to generic rock color
        confirms uptext hovering over rock before mining
@@ -54,12 +57,26 @@ def mine(rocks=rocks,noob_factor=2.0):
     counts = count_rocks(rocks=rocks)
     print('Weighted totals:',counts)
     minidx = np.argmin(counts)
-    weight,color,tol,bmp = rocks[minidx]
-    mainscreen = get_mainscreen()
-    found = find_colors(color,mainscreen,tol=tol,mode='hsl')
-    b = find_colors(np.asarray([107,88,28]),mainscreen,tol=0.02)
-    found = filter_near(found,b,10)
-    return fast_mine(found,noob_factor=noob_factor)
+    rock = rocks[minidx]
+    counts = count_inv(color=[119,96,67],tol=0.02)
+    mined = False
+    invc_before = count_inv(color=[119,96,67],tol=0.02)
+    while True:
+        found = find_rock(rock)
+        if not fast_mine(found):
+            break
+        if count_inv() >= 28:
+            break
+        for i in range(int(100*noob_factor)):
+            sleep(0.05)
+            invc_now = count_inv(color=[119,96,67],tol=0.02)
+            if np.any(invc_now != invc_before):
+                mined = True
+                invc_before = invc_now
+                break
+        else:
+            break
+    return mined
 
 def west_of_wall():
     '''returns true if character is closer to west road or mine colors than east road or mine colors'''
@@ -125,7 +142,7 @@ def jump_wall():
     if len(border) > 3 or len(agility) > 0:
         border = border[0] if len(border) > 3 else (agility[np.random.randint(len(agility))]+[5,5])
         click_mouse(*(border+[mmxs,mmys]))
-        flag_wait(imax=10)
+        flag_wait()
         mainscreen = get_mainscreen()
         wall_points = find_colors(wall_color,mainscreen,tol=0.07,mode='hsl')
         inner_wall_points = find_colors(inner_wall_color,mainscreen,tol=0.07,mode='hsl')
@@ -170,7 +187,8 @@ while True:
                 total_trips = total_trips + 1
                 if np.random.random() < 0.5:
                     polish_minimap(min_same=35,horizontal=False)
-                print('Completed %i inventories (%i ore @ %0.2f s/ore)'%(total_trips,total_ores,(mark_time()-start_time)/total_ores))
+                txt = 'Completed %i inventories (%i ore @ %0.2f s/ore)'%(total_trips,total_ores,(mark_time()-start_time)/total_ores)
+                print(txt)
                 continue
     else:
         if west_of_wall():
@@ -197,7 +215,7 @@ while True:
                 print('Moving west:',len(west))
                 if len(west):
                     click_mouse(*(west[np.argsort(west[:,0])[0]]+(mmxs,mmys)))
-                    sleep(2.0)
+                    sleep(0.5)
                 else:
                     print('Got lost going to mine!')
             else:
@@ -219,7 +237,3 @@ while True:
                 click_mouse(mmxc-20,mmyc)
                 flag_wait(imax=10)
                 print('Crossed wall east->west')
-
-
-
-
