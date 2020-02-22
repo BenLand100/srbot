@@ -81,8 +81,8 @@ def open_bank():
     if len(find_bitmap(bank_window,mainscreen)) > 0:
         return True
     minimap = get_minimap()
-    npc_points = find_colors([255,255,0],minimap,tol=0.05,mode='hsl')
-    bank_points = np.concatenate([find_colors(bank_floor,minimap,tol=0.085,mode='hsl') for bank_floor in bank_floor_colors])
+    npc_points = find_colors([255,255,0],minimap,tol=(0.05,0.1,0.1),mode='hsl')
+    bank_points = np.concatenate([find_colors(bank_floor,minimap,tol=(0.05,0.1,0.1),mode='hsl') for bank_floor in bank_floor_colors])
     print('Bank points:',len(bank_points))
     clusters,counts = cluster(bank_points)
     if len(counts) < 1 or np.count_nonzero(counts>20) < 1:

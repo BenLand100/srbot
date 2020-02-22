@@ -10,7 +10,7 @@ anchor = load_image('anchor.png') #image (always) on the client's banner
 # misc useful coordinates
 client_pos = [0,0] #set by target() used throughout.
 w,h = 765,503
-xoff,yoff = -1,-2
+xoff,yoff = -1,-1
 msxs,msxe,msys,msye = 5+xoff,515+xoff,5+yoff,337+yoff
 msw,msh = (msxe-msxs+1),(msye-msys+1)
 msxc,msyc = msxs+msw/2,msys+msh/2
@@ -25,4 +25,4 @@ def target():
     desktop = np.asarray(pyautogui.screenshot())
     pts = find_bitmap(anchor,desktop)
     assert len(pts)==1,'window ambiguious or not found'
-    client_pos[0],client_pos[1] = pts[0]+[0,anchor.shape[1]] #FIXME
+    client_pos[0],client_pos[1] = pts[0]+[-520,0] 
