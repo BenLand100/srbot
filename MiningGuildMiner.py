@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 
 from srbot import *
+import argparse
+
+
+parser = argparse.ArgumentParser('Mines in West Falador mine and bankes in Falador West Bank')
+parser.add_argument('-m','--max-mith',type=int,default=0,help='maximum mith to mine per trip')
+
+args = parser.parse_args()
 
 max_mith = 0
 
@@ -9,6 +16,7 @@ mm_ladder = [85,49,0]
 mm_bank = [185,174,147]
 
 mine_icon = load_image('mine_icon.png')
+bank_icon = load_image('bank_icon.png')
 
 def mine(points):
     counts = count_inv(color=[119,96,67],tol=0.02)
@@ -17,26 +25,56 @@ def mine(points):
     if len(points) == 1:
         point = points[0]
     else:
-        point = closest_exp([msw/2,msh/2],points,10)
-    move_mouse(*(point+[msxs,msys]))
-    sleep(0.2)
+        point = closest_exp([msw/2-150*((mith_count+coal_count)**2 / 28**2),msh/2],points,10)
+    point = point+[msxs,msys]+np.random.normal(0,5,size=(2,))
+    move_mouse(*point)
+    sleep(0.05)
     uptext = get_uptext(width=80)
     cyan = find_colors([0,238,238],uptext,mode='hsl',tol=0.15)
     print('cyan',len(cyan))
     if len(cyan) > 50:
-        click_mouse(*(point+[msxs,msys]))
+        click_mouse(*point)
     else:
         return False
     for i in range(100):
-        mainscreen = get_mainscreen()
         sleep(0.05)
         if np.any(count_inv(color=[119,96,67],tol=0.02) != counts):
             return True
     return False
 
+def find_rocks():
+    mainscreen = get_mainscreen()
+            
+    #gas = find_colors([163,151,126],mainscreen,mode='hsl',tol=(0.08,0.1,0.2))
+    
+    if mith_count < max_mith:
+        a = find_colors([84,85,126],mainscreen,tol=(0.07,0.1,0.1),mode='hsl')
+        b = find_colors([45,45,66],mainscreen,tol=(0.07,0.1,0.1),mode='hsl')
+        mith = filter_near(a,b,4)
+        #mith = filter_far(mith,gas,50)
+
+    a = find_colors([63,63,41],mainscreen,tol=(0.07,0.1,0.05),mode='hsl')
+    b = find_colors([35,35,23],mainscreen,tol=(0.07,0.1,0.05),mode='hsl')
+    coal = filter_near(a,b,4)
+    #coal = filter_far(coal,gas,50)
+    
+    if mith_count < max_mith and len(mith) > 20:
+        print('mining mith')
+        rocks = mith
+    elif len(coal) > 100:
+        print('mining coal')
+        rocks = coal
+    else:
+        print('no rocks!')
+        rocks = None
+        
+    return rocks
+
 target()
 click_mouse(mmxc,mmyc)
 total_trips = 0
+total_mith,total_coal = 0,0
+start_time = mark_time()
 last_mine = mark_time()
 while True:
     if login_screen():
@@ -50,7 +88,7 @@ while True:
     underground = len(map_dark) > 5000
     mith_count = count_inv(color=[84,85,126],tol=0.1)
     coal_count = count_inv(color=[53,53,37],tol=0.015)
-    print('%i mith %i coal'%(mith_count,coal_count))
+    #print('%i mith %i coal'%(mith_count,coal_count))
     if inv_full: #go to bank
         if underground: #going to bank underground
             print('leaving mine')
@@ -95,81 +133,63 @@ while True:
                 a = find_colors(mm_cave,minimap,tol=0.12,mode='dist')
                 a = filter_radius(a,[mmxc-mmxs,mmyc-mmys],55)
                 pt = closest([mmxc-mmxs-50,mmyc-mmys],a)
-                click_mouse(*(pt+[mmxs+5,mmys+5]))
+                click_mouse(*(pt+[mmxs,mmys]))
                 sleep(0.2)
         else: #going to bank above ground
-            bank = find_colors(mm_bank,minimap,mode='hsl',tol=(0.05,0.2,0.08))
+            bank = find_best_bitmap(bank_icon,minimap,tol=0.1,mode='xcorr')
             bank = filter_radius(bank,[mmxc-mmxs,mmyc-mmys],65)
             npc = find_colors([238,238,0],minimap,mode='hsl',tol=0.15)
+            npc = filter_radius(npc,[mmxc-mmxs,mmyc-mmys],65)
             clusters,counts = cluster(npc,radius=5)
-            if len(bank) and len(counts) and np.max(counts) > 50:
-                npc = clusters[np.argmax(counts)]
-                bank = filter_near(npc,bank,5)
+            if np.max(counts) > 50:
+                click_here = clusters[np.argmax(counts)]-[0,7]
+            elif len(bank):
+                click_here = bank
             else:
-                bank = []
-            if len(bank) < 10:
                 print('trying to find bank')
                 click_mouse(*[mmxc-25+np.random.random()*4,mmyc-45+np.random.random()*5])
                 sleep(1.5)
-            else:
-                print('walking to bank')
-                np.random.shuffle(bank)
-                point = bank[0]
-                dist = np.sqrt(np.sum(np.square(point-[mmxc-mmxs,mmyc-mmys])))
-                print('bank dist',dist)
-                click_mouse(*(bank[0]+[mmxs,mmys-10]))
-                if dist > 30:
-                    flag_wait()
-                    sleep(10.0)
+                continue
+            
+            print('walking to bank')
+            np.random.shuffle(click_here)
+            point = click_here[0]
+            dist = np.sqrt(np.sum(np.square(point-[mmxc-mmxs,mmyc-mmys])))
+            print('bank dist',dist)
+            click_mouse(*(point+[mmxs,mmys]))
+            if dist > 70:
                 flag_wait()
-                sleep(1.0)
-                mainscreen = get_mainscreen()
-                a = find_colors([125,101,71],mainscreen,tol=0.02,mode='hsl')
-                b = find_colors([143,116,82],mainscreen,tol=0.02,mode='hsl')
-                points = filter_near(a,b,40)
-                points = closest_shuffle([msxc-msxs,msyc-msys],points,25)
-                for point in points[:min(5,len(points))]:
-                    click_mouse(*point,left=False)
-                    sleep(0.05)
-                    use = find_bitmap(use_booth,get_client())
-                    if len(use) > 0:
-                        click_mouse(*(use[0]+[10,10]))
-                        flag_wait()
-                        sleep(1.0)
-                        deposit_all()
-                        total_trips = total_trips + 1
-                        if np.random.random() < 0.5:
-                            polish_minimap(min_same=27)
-                        print('Completed %i inventories'%total_trips)
-                        break
-                    move_mouse(*(point+[0,-25]))
+                sleep(10.0)
+            flag_wait()
+            sleep(1.0)
+            mainscreen = get_mainscreen()
+            a = find_colors([125,101,71],mainscreen,tol=0.02,mode='hsl')
+            b = find_colors([143,116,82],mainscreen,tol=0.02,mode='hsl')
+            points = filter_near(a,b,40)
+            points = closest_shuffle([msxc-msxs,msyc-msys],points,25)
+            for point in points[:min(5,len(points))]:
+                click_mouse(*point,left=False)
+                sleep(0.05)
+                use = find_bitmap(use_booth,get_client())
+                if len(use) > 0:
+                    click_mouse(*(use[0]+[10,10]))
+                    flag_wait()
+                    sleep(1.0)
+                    deposit_all()
+                    if np.random.random() < 0.5:
+                        polish_minimap(min_same=27)
+                    total_trips = total_trips + 1
+                    total_mith += mith_count
+                    total_coal += coal_count
+                    total_time = mark_time()-start_time
+                    print('Completed %i inventories in %0.1f hr (%i coal, %i mith; %0.2fs/ore)'%(total_trips,total_time/3600,total_coal,total_mith,total_time/(total_coal+total_mith)))
+                    break
+                move_mouse(*(point+[0,-25]))
             
     else: #go to mine
         if underground: #go to ore and mine
             print('looking for ore')
-            mainscreen = get_mainscreen()
-            
-            gas = find_colors([163,151,126],mainscreen,mode='hsl',tol=(0.08,0.1,0.2))
-            
-            a = find_colors([84,85,126],mainscreen,tol=(0.07,0.1,0.1),mode='hsl')
-            b = find_colors([45,45,66],mainscreen,tol=(0.07,0.1,0.1),mode='hsl')
-            mith = filter_near(a,b,4)
-            mith = filter_far(mith,gas,50)
-        
-            a = find_colors([63,63,41],mainscreen,tol=(0.07,0.1,0.05),mode='hsl')
-            b = find_colors([35,35,23],mainscreen,tol=(0.07,0.1,0.05),mode='hsl')
-            coal = filter_near(a,b,4)
-            coal = filter_far(coal,gas,50)
-            
-            rocks = None
-            if len(mith) > 20 and mith_count < max_mith:
-                print('mining mith')
-                rocks = mith
-            elif len(coal) > 100:
-                print('mining coal')
-                rocks = coal
-            else:
-                print('Lost!')
+            rocks = find_rocks()
             if rocks is None or (np.random.random()<0.05 and mith_count < max_mith):
                 print('trying to find mith')
                 center_of_dark = np.mean(map_dark-[mmxc-mmxs,mmyc-mmys],axis=0)
@@ -178,12 +198,19 @@ while True:
                     a = filter_radius(a,[mmxc-mmxs,mmyc-mmys],55)
                     if len(a) > 0:
                         pt = closest([mmxc-mmxs+50,mmyc-mmys+50],a)
-                        click_mouse(*(pt+[mmxs+5,mmys+5]))
+                        click_mouse(*(pt+[mmxs,mmys]))
                         flag_wait()
                 continue
+            else:    
+                while rocks is not None:
+                    if mine(rocks):
+                        last_mine = mark_time()
+                        if count_inv() == 28:
+                            break
+                        rocks = find_rocks()
+                    else:
+                        break
                     
-            if mine(rocks):
-                last_mine = mark_time()
         else: #go to mining guild
             if len(map_dark) < 10:
                 print('trying to find ladder')
