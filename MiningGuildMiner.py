@@ -22,10 +22,12 @@ def mine(points):
     counts = count_inv(color=[119,96,67],tol=0.02)
     clusters,_ = cluster(points,10)
     points = np.asarray([np.mean(cluster,axis=0) for cluster in clusters])
-    if len(points) == 1:
+    if len(points) == 0:
+        return False
+    elif len(points) == 1:
         point = points[0]
     else:
-        point = closest_exp([msw/2-150*((mith_count+coal_count)**2 / 28**2),msh/2],points,10)
+        point = closest_exp(np.asarray([msw/2-150*((mith_count+coal_count)/28)**3.5,msh/2],dtype=np.float64),points,10)
     point = point+[msxs,msys]+np.random.normal(0,5,size=(2,))
     move_mouse(*point)
     sleep(0.05)
@@ -36,7 +38,7 @@ def mine(points):
         click_mouse(*point)
     else:
         return False
-    for i in range(100):
+    for i in range(40):
         sleep(0.05)
         if np.any(count_inv(color=[119,96,67],tol=0.02) != counts):
             return True
@@ -105,7 +107,7 @@ while True:
                 ladder = clusters[np.argmax(counts)]
                 pt = np.mean(ladder,axis=0)
                 print('found ladder',pt)
-                click_mouse(*(pt+[mmxs,mmys]))
+                click_mouse(*(pt+[mmxs+10,mmys]))
                 flag_wait()
                 
                 mainscreen = get_mainscreen()
@@ -124,8 +126,6 @@ while True:
                         pt = find_bitmap(climb,get_mainscreen())
                         if len(pt) > 0:
                             click_mouse(*(pt[0]+[10,10]))
-                            flag_wait()
-                            sleep(0.5)
                             run_on()
                             break
                         move_mouse(*(point+[0,-25]))
@@ -133,7 +133,7 @@ while True:
                 a = find_colors(mm_cave,minimap,tol=0.12,mode='dist')
                 a = filter_radius(a,[mmxc-mmxs,mmyc-mmys],55)
                 pt = closest([mmxc-mmxs-50,mmyc-mmys],a)
-                click_mouse(*(pt+[mmxs,mmys]))
+                click_mouse(*(pt+[mmxs,mmys]+np.random.normal(0,3,size=2)))
                 sleep(0.2)
         else: #going to bank above ground
             bank = find_best_bitmap(bank_icon,minimap,tol=0.1,mode='xcorr')
@@ -141,13 +141,15 @@ while True:
             npc = find_colors([238,238,0],minimap,mode='hsl',tol=0.15)
             npc = filter_radius(npc,[mmxc-mmxs,mmyc-mmys],65)
             clusters,counts = cluster(npc,radius=5)
-            if np.max(counts) > 50:
+            if len(counts) and np.max(counts) > 50:
                 click_here = clusters[np.argmax(counts)]-[0,7]
             elif len(bank):
                 click_here = bank
             else:
                 print('trying to find bank')
-                click_mouse(*[mmxc-25+np.random.random()*4,mmyc-45+np.random.random()*5])
+                angle = np.random.normal(50+180,10)/180*np.pi
+                r = np.random.normal(60,10)
+                click_mouse(*[mmxc+r*np.cos(angle),mmyc+r*np.sin(angle)])
                 sleep(1.5)
                 continue
             
@@ -190,7 +192,7 @@ while True:
         if underground: #go to ore and mine
             print('looking for ore')
             rocks = find_rocks()
-            if rocks is None or (np.random.random()<0.05 and mith_count < max_mith):
+            if (mith_count < max_mith and np.random.random()<0.05):
                 print('trying to find mith')
                 center_of_dark = np.mean(map_dark-[mmxc-mmxs,mmyc-mmys],axis=0)
                 if np.any(center_of_dark < 0): #not at bottom right corner
@@ -200,6 +202,16 @@ while True:
                         pt = closest([mmxc-mmxs+50,mmyc-mmys+50],a)
                         click_mouse(*(pt+[mmxs,mmys]))
                         flag_wait()
+                continue
+            elif rocks is None:
+                print('trying to find rocks')
+                a = find_colors(mm_cave,minimap,tol=0.12,mode='dist')
+                a = filter_radius(a,[mmxc-mmxs,mmyc-mmys],45)
+                if len(a) > 0:
+                    np.random.shuffle(a)
+                    pt = a[0]
+                    click_mouse(*(pt+[mmxs,mmys]))
+                    flag_wait()
                 continue
             else:    
                 while rocks is not None:
@@ -214,7 +226,9 @@ while True:
         else: #go to mining guild
             if len(map_dark) < 10:
                 print('trying to find ladder')
-                click_mouse(*[mmxc+30+np.random.random()*5,mmyc+45+np.random.random()*5])
+                angle = np.random.normal(50,10)/180*np.pi
+                r = np.random.normal(55,10)
+                click_mouse(*[mmxc+r*np.cos(angle),mmyc+r*np.sin(angle)])
                 sleep(1.5)
             else:
                 center_of_dark = np.mean(map_dark-[mmxc-mmxs,mmyc-mmys],axis=0)
@@ -235,8 +249,6 @@ while True:
                         pt = find_bitmap(climb,get_mainscreen())
                         if len(pt) > 0:
                             click_mouse(*(pt[0]+[10,10]))
-                            flag_wait()
-                            sleep(0.5)
                             run_on()
                             break
                         move_mouse(*(point+[0,-25]))
