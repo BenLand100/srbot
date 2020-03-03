@@ -14,6 +14,8 @@ max_mith = 0
 mm_cave = [121,93,28]
 mm_ladder = [85,49,0]
 mm_bank = [185,174,147]
+mm_grass = [132,138,48]
+mm_rock = [95,94,95]
 
 mine_icon = load_image('mine_icon.png')
 bank_icon = load_image('bank_icon.png')
@@ -78,12 +80,13 @@ total_trips = 0
 total_mith,total_coal = 0,0
 start_time = mark_time()
 last_mine = mark_time()
+unsuccessful_mines = 0
 while True:
     if login_screen():
         login()
         continue
-    if mark_time()-last_mine > 10*60:
-        raise RuntimeError('Haven\'t mined in 10 minutes, giving up because something ain\'t right.')
+    #if mark_time()-last_mine > 10*60:
+    #    raise RuntimeError('Haven\'t mined in 10 minutes, giving up because something ain\'t right.')
     inv_full = count_inv() == 28
     minimap = get_minimap()
     map_dark = find_colors([0,0,0],minimap,0.001)
@@ -97,6 +100,8 @@ while True:
             b = find_colors(mm_ladder,minimap,tol=0.05,mode='dist')
             b = filter_near(b,map_dark,20)
             b = filter_radius(b,[mmxc-mmxs,mmyc-mmys],55)
+            if len(b) > 0:
+                b = b[b[:,0]<(mmxc-mmxs+20)]
             clusters,counts = cluster(b,radius=2)
             mask = counts < 200
             icon = find_best_bitmap(mine_icon,minimap,tol=0.2,mode='xcorr')
@@ -149,8 +154,12 @@ while True:
                 print('trying to find bank')
                 angle = np.random.normal(50+180,10)/180*np.pi
                 r = np.random.normal(60,10)
-                click_mouse(*[mmxc+r*np.cos(angle),mmyc+r*np.sin(angle)])
-                sleep(1.5)
+                target = [mmxc-mmxs+r*np.cos(angle),mmyc-mmys+r*np.sin(angle)]
+                grass = find_colors(mm_grass,minimap,tol=(0.05,0.2,0.2),mode='hsl')
+                if len(grass) > 0:
+                    point = closest(target,grass)
+                    click_mouse(*(point+[mmxs,mmys]))
+                    sleep(1.5)
                 continue
             
             print('walking to bank')
@@ -191,7 +200,7 @@ while True:
     else: #go to mine
         if underground: #go to ore and mine
             print('looking for ore')
-            rocks = find_rocks()
+            rocks = find_rocks() if unsuccessful_mines < 10 else None
             if (mith_count < max_mith and np.random.random()<0.05):
                 print('trying to find mith')
                 center_of_dark = np.mean(map_dark-[mmxc-mmxs,mmyc-mmys],axis=0)
@@ -202,34 +211,44 @@ while True:
                         pt = closest([mmxc-mmxs+50,mmyc-mmys+50],a)
                         click_mouse(*(pt+[mmxs,mmys]))
                         flag_wait()
-                continue
             elif rocks is None:
                 print('trying to find rocks')
-                a = find_colors(mm_cave,minimap,tol=0.12,mode='dist')
-                a = filter_radius(a,[mmxc-mmxs,mmyc-mmys],45)
-                if len(a) > 0:
-                    np.random.shuffle(a)
-                    pt = a[0]
+                rocks = find_colors(mm_rock,minimap,mode='hsl',tol=(0.08,0.2,0.2))
+                if len(rocks):
+                    com = np.mean(rocks,axis=0)
+                    dist = np.sqrt(np.sum(np.square(rocks-com),axis=1))
+                    dist_mu = 35
+                    dist_sigma = 5
+                    weight = np.exp(-np.square((dist-dist_mu)/dist_sigma)/2.0)
+                    cumsum = np.cumsum(weight)
+                    cumsum /= cumsum[-1]
+                    pt = rocks[np.searchsorted(cumsum,np.random.random())]
                     click_mouse(*(pt+[mmxs,mmys]))
+                    unsuccessful_mines = 0
                     flag_wait()
-                continue
             else:    
                 while rocks is not None:
                     if mine(rocks):
                         last_mine = mark_time()
+                        unsuccessful_mines = 0
                         if count_inv() == 28:
                             break
                         rocks = find_rocks()
                     else:
+                        unsuccessful_mines = unsuccessful_mines + 1
                         break
                     
         else: #go to mining guild
             if len(map_dark) < 10:
                 print('trying to find ladder')
-                angle = np.random.normal(50,10)/180*np.pi
-                r = np.random.normal(55,10)
-                click_mouse(*[mmxc+r*np.cos(angle),mmyc+r*np.sin(angle)])
-                sleep(1.5)
+                angle = np.random.normal(60,10)/180*np.pi
+                r = np.random.normal(65,10)
+                target = [mmxc-mmxs+r*np.cos(angle),mmyc-mmys+r*np.sin(angle)]
+                grass = find_colors(mm_grass,minimap,tol=(0.05,0.2,0.2),mode='hsl')
+                if len(grass) > 0:
+                    point = closest(target,grass)
+                    click_mouse(*(point+[mmxs,mmys]))
+                    sleep(1.5)
             else:
                 center_of_dark = np.mean(map_dark-[mmxc-mmxs,mmyc-mmys],axis=0)
                 dist_to_dark = np.sqrt(np.sum(np.square(center_of_dark)))
