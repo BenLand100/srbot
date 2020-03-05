@@ -137,9 +137,10 @@ while True:
             else:
                 a = find_colors(mm_cave,minimap,tol=0.12,mode='dist')
                 a = filter_radius(a,[mmxc-mmxs,mmyc-mmys],55)
-                pt = closest([mmxc-mmxs-50,mmyc-mmys],a)
-                click_mouse(*(pt+[mmxs,mmys]+np.random.normal(0,3,size=2)))
-                sleep(0.2)
+                if len(a) > 0:
+                    pt = closest([mmxc-mmxs-50,mmyc-mmys],a)
+                    click_mouse(*(pt+[mmxs,mmys]+np.random.normal(0,3,size=2)))
+                    sleep(0.2)
         else: #going to bank above ground
             bank = find_best_bitmap(bank_icon,minimap,tol=0.1,mode='xcorr')
             bank = filter_radius(bank,[mmxc-mmxs,mmyc-mmys],65)
