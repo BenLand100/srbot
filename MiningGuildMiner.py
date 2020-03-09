@@ -97,7 +97,7 @@ while True:
     if inv_full: #go to bank
         if underground: #going to bank underground
             print('leaving mine')
-            b = find_colors(mm_ladder,minimap,tol=0.05,mode='dist')
+            b = find_colors(mm_ladder,minimap,tol=(0.05,0.1,0.1),mode='hsl')
             b = filter_near(b,map_dark,20)
             b = filter_radius(b,[mmxc-mmxs,mmyc-mmys],55)
             if len(b) > 0:
@@ -214,8 +214,9 @@ while True:
                         flag_wait()
             elif rocks is None:
                 print('trying to find rocks')
-                rocks = find_colors(mm_rock,minimap,mode='hsl',tol=(0.08,0.2,0.2))
+                rocks = find_colors(mm_rock,minimap,mode='hsl',tol=(1.0,0.2,0.2))
                 if len(rocks):
+                    rocks = filter_near(rocks,[mmxc-mmxs,mmyc-mmys],65)
                     com = np.mean(rocks,axis=0)
                     dist = np.sqrt(np.sum(np.square(rocks-com),axis=1))
                     dist_mu = 35
