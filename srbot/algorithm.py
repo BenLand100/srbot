@@ -58,8 +58,8 @@ def closest_exp(pt,pts,scale,N=None):
         return []
     elif len(pts) == 1:
         return [pts[0]]
-    pts = np.asarray(pts)
-    pt = np.asarray(pt)
+    pts = np.asarray(pts,dtype=np.float64)
+    pt = np.asarray(pt,dtype=np.float64)
     dists = np.sqrt(np.sum(np.square(pts - pt),axis=1))
     p = np.exp(-dists/scale)
     p = p/np.sum(p)

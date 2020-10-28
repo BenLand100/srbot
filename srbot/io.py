@@ -27,14 +27,18 @@ def sleep(sec):
 def mark_time():
     return time.monotonic()
     
-def move_mouse(x,y,speed=1.0):
+def move_mouse(x,y,speed=None):
     '''moves the mouse to a point'''
-    cx,cy = pyautogui.position()
-    ex,ey = x+client_pos[0],y+client_pos[1]
-    dt = np.sqrt((cx-x)**2.0+(cy-y)**2.0)/(speed*1000)
-    pyautogui.moveTo(ex,ey,dt,pyautogui.easeOutQuad)
+    if speed is None:
+        ex,ey = x+client_pos[0],y+client_pos[1]
+        pyautogui.moveTo(ex,ey,0)
+    else:
+        cx,cy = pyautogui.position()
+        ex,ey = x+client_pos[0],y+client_pos[1]
+        dt = np.sqrt((cx-x)**2.0+(cy-y)**2.0)/(speed*1000)
+        pyautogui.moveTo(ex,ey,dt,pyautogui.easeOutQuad)
 
-def click_mouse(x,y,left=True,speed=1.0):
+def click_mouse(x,y,left=True,speed=None):
     '''moves to and clicks a point'''
     move_mouse(x,y,speed=speed)
     pyautogui.click(button='left' if left else 'right')

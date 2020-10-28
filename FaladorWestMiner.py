@@ -18,6 +18,12 @@
 #    along with srbot.  If not, see <https://www.gnu.org/licenses/>.
 
 from srbot import *
+import argparse
+
+parser = argparse.ArgumentParser('Mines in West Falador mine and bankes in Falador West Bank')
+parser.add_argument('item',help='iron,bronze')
+
+args = parser.parse_args()
 
 #Mining script requires agility shortcut Falador west
 
@@ -25,18 +31,21 @@ west_road = [122,117,70]
 east_road = [121,119,97]
 wall_color = [190,184,155]
 mine_rock_color = [97,58,3]
-mine_area_color = [98,80,23]
+mine_area_color = [56,47,18]
 inner_wall_color = [60,60,50]
 outer_wall_color = [73,64,41]
 
 copper_color = [168,120,76]
 tin_color = [149,138,138]
 iron_color = [60,35,28]
-gold_color = [251,204,31]
 
-#rocks = [(1,copper_color,(0.02,0.08,0.08),[223,129,59]),(1,tin_color,0.025,[139,130,129])] #copper&tin
-rocks = [(1,iron_color,(0.02,0.08,0.08),[78,48,36])] #iron
-
+if args.item == 'bronze':
+    rocks = [(1,copper_color,(0.02,0.08,0.08),[223,129,59]),(1,tin_color,0.025,[139,130,129])] #copper&tin
+elif args.item == 'iron':
+    rocks = [(1,iron_color,(0.02,0.08,0.08),[78,48,36])] #iron
+else:
+    raise RuntimeError('Unknown rock to mine: '+args.item)
+    
 mm_east_tol = (0.05,0.1,0.1)
 mm_west_tol = (0.05,0.08,0.08)
 
