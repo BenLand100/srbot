@@ -14,3 +14,5 @@ varible to the VNC display. This code uses the system mouse and keyboard.
 Create `creds.py` with a `username` and `password` field for your account to 
 enable logging in. Using some nominally complete Jupyter installation (e.g.
 Anaconda), open one of the notebooks and run the cells to run the script.
+
+Copyright 2020 by Benjamin J. Land (a.k.a. BenLand100)
